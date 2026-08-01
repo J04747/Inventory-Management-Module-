@@ -1,0 +1,7 @@
+Type,Item_ID,Item_Name,Stock_Quantity,Expiration_Date
+Perishable,INV-101,Fresh Apples,50,5/8/2026
+Perishable,INV-102,Whole Milk,0,10/8/2026
+NonPerishable,INV-103,Canned Black Beans,100,1/12/2028
+NonPerishable,INV-104,White Rice (5kg),40,20/5/2027
+Perishable,INV-105,Whole Wheat Bread,30,7/8/2026
+NonPerishable,INV-106,Peanut Butter,60,15/10/2027

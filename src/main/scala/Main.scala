@@ -2,8 +2,8 @@ import scala.util.{Success, Failure}
 
 @main def run(): Unit =
 
-  val inventoryPath    = "src/main/scala/PantryItem.csv"
-  val beneficiaryPath  = "src/main/scala/Beneficiary.csv"
+  val inventoryPath    = "src/main/resources/PantryItem.csv"
+  val beneficiaryPath  = "src/main/resources/Beneficiary.csv"
   val today            = "2026-07-29"
 
   // ── Load data from CSV files ──

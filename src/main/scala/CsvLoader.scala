@@ -36,3 +36,11 @@ object CsvLoader:
           )
       finally
         reader.close()
+
+  def loadExports(path: String): Try[List[Map[String, String]]] =
+    Try:
+      val reader = CSVReader.open(new File(path))
+      try
+        reader.allWithHeaders()
+      finally
+        reader.close()

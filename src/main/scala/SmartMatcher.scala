@@ -65,3 +65,28 @@ object SmartMatcher:
     // combine: name-matched first, then order-matched; also return waiting list
     val allocated = nameMatched.reverse ++ orderMatched.reverse
     (allocated, waiting)
+
+  /**
+   * EXPORT: Writes allocated pairs to ExportItem.csv.
+   * Each row contains FamilyID, ItemID, Size, ExecuteDate.
+   */
+  def exportAllocations(
+    allocations: List[(Beneficiary, PantryItem)],
+    executeDate: String,
+    filePath: String
+  ): Unit =
+    val header = "Family_ID,Item_ID,Size,Execute_Date"
+    // read existing rows (skip header) if the file already has content
+    val existingRows =
+      try
+        val lines = java.nio.file.Files.readAllLines(java.nio.file.Paths.get(filePath))
+        if lines.size() > 1 then
+          (1 until lines.size()).map(i => lines.get(i)).toList.filter(_.trim.nonEmpty)
+        else List.empty[String]
+      catch
+        case _: Exception => List.empty[String]
+    val newRows = allocations.map { case (b, item) =>
+      s"${b.familyId},${item.itemId},${b.size},$executeDate"
+    }
+    val content = (header +: (existingRows ++ newRows)).mkString("\n")
+    java.nio.file.Files.writeString(java.nio.file.Paths.get(filePath), content)

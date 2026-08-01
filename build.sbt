@@ -3,7 +3,7 @@ scalaVersion := "3.8.4"
 
 scalacOptions ++= Seq(
   "-Wunused:all",            // Enables all unused warnings (imports, privates, locals, params)
-  "-Werror",                 // Fails the compilation if ANY warning is emitted
+  "-Werror",
   "-Wconf:cat=deprecation:s" // Silence deprecation warnings (from third-party libs like ScalaFX)
 )
 
