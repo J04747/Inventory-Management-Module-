@@ -1,3 +1,5 @@
+// ai-assisted: #2
+// why: Implemented Type Class pattern instances for generic ID extraction.
 trait Identifiable[T]:
   def id(item: T): String
 
@@ -9,6 +11,8 @@ object Identifiable:
     def id(item: Beneficiary): String = item.familyId
 
 object Manage:
+  // ai-assisted: #3
+  // why: Generated purely functional CRUD list operations avoiding mutable variables.
   /**
    * CREATE: Adds a new item to the list.
    * Returns a new list (immutable) containing the existing items and the new item.
@@ -42,6 +46,8 @@ object Manage:
    * SAVE: Writes the current PantryItem list back to the CSV file.
    * Preserves the CSV header row format.
    */
+  // ai-assisted: #5
+  // why: Provided CSV serialization logic with string interpolation and pattern matching.
   def savePantryItems(items: List[PantryItem], filePath: String): Unit =
     val header = "Type,Item_ID,Item_Name,Stock_Quantity,Expiration_Date"
     val rows = items.map:

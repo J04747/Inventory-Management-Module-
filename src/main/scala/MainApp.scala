@@ -102,7 +102,9 @@ object MainApp extends JFXApp3:
         new TableColumn[MatchRecord, String]("Type") {
           cellValueFactory = cell => StringProperty(if cell.value.item.isInstanceOf[Perishable] then "Perishable" else "NonPerishable")
         },
-        new TableColumn[MatchRecord, String]("Action") {
+        new TableColumn[MatchRecord, String]("Munual Check") {
+          // ai-assisted: #9
+          // why: Boilerplate for custom TableCell creation in ScalaFX is complex and unintuitive.
           cellValueFactory = _ => StringProperty("")
           cellFactory = (_: TableColumn[MatchRecord, String]) => new TableCell[MatchRecord, String] {
             item.onChange { (_, _, _) =>
@@ -158,28 +160,39 @@ object MainApp extends JFXApp3:
 
     val executeDateInput = new TextField { promptText = "Enter Execute Date (d/M/yyyy)"; prefWidth = 250 }
 
+    val executeErrorLabel = new Label("")
+    executeErrorLabel.style = "-fx-font-size: 14pt; -fx-text-fill: red;"
+
     val executeBtn = new Button("Execute"):
+      // ai-assisted: #10
+      // why: The execution logic requires intricate state management, file I/O operations, and model conversions.
       style = "-fx-font-size: 16pt;"
       onAction = handle {
         val execDate = executeDateInput.text.value.trim
-        if (execDate.nonEmpty && matchBuffer.nonEmpty) {
-          // only export confirmed records (Perishable must be confirmed, NonPerishable auto-confirmed)
-          val confirmedRecords = matchBuffer.toList.filter { r =>
-            if r.item.isInstanceOf[Perishable] then r.confirmed.value else true
+        if (execDate.isEmpty) {
+          executeErrorLabel.text = "Error: Please enter an execute date."
+        } else if (matchBuffer.isEmpty) {
+          executeErrorLabel.text = "Error: No items to execute."
+        } else {
+          val hasUnconfirmed = matchBuffer.exists { r =>
+            r.item.isInstanceOf[Perishable] && !r.confirmed.value
           }
-          if (confirmedRecords.nonEmpty) {
-            val pairs = confirmedRecords.map(r => (r.beneficiary, r.item))
+          if (hasUnconfirmed) {
+            executeErrorLabel.text = "Error: Please confirm all perishable items first."
+          } else {
+            executeErrorLabel.text = ""
+            val pairs = matchBuffer.toList.map(r => (r.beneficiary, r.item))
             // write to ExportItem.csv
             SmartMatcher.exportAllocations(pairs, execDate, "src/main/resources/ExportItem.csv")
             // delete matched beneficiaries from list
-            confirmedRecords.foreach { r =>
+            matchBuffer.foreach { r =>
               currentBeneficiaries = Manage.delete(currentBeneficiaries, r.beneficiary.familyId)
             }
             beneficiaryBuffer.clear()
             beneficiaryBuffer ++= currentBeneficiaries
             Manage.saveBeneficiaries(currentBeneficiaries, "src/main/resources/Beneficiary.csv")
             // deduct quantity from inventory
-            confirmedRecords.foreach { r =>
+            matchBuffer.foreach { r =>
               val newQty = r.item.quantity - r.beneficiary.size
               val updatedItem: PantryItem = r.item match
                 case p: Perishable => Perishable(p.itemId, p.name, newQty, p.expiryDate, p.isSpoiledPrematurely)
@@ -191,6 +204,8 @@ object MainApp extends JFXApp3:
             Manage.savePantryItems(currentInventory, "src/main/resources/PantryItem.csv")
             // clear table
             matchBuffer.clear()
+            executeErrorLabel.style = "-fx-font-size: 14pt; -fx-text-fill: green;"
+            executeErrorLabel.text = "Execution successful!"
           }
         }
       }
@@ -202,9 +217,11 @@ object MainApp extends JFXApp3:
         new Label("Smart Match Allocations") { style = "-fx-font-size: 20pt; -fx-font-weight: bold;" },
         new HBox(10) { alignment = Pos.Center; children = Seq(new Label("Simulation Date:"), dateInput, runMatchBtn) },
         matchTable,
-        new HBox(10) { alignment = Pos.Center; children = Seq(new Label("Execute Date:"), executeDateInput, executeBtn) }
+        new HBox(10) { alignment = Pos.Center; children = Seq(new Label("Execute Date:"), executeDateInput, executeBtn) },
+        executeErrorLabel
       )
-
+      
+    // Export
     case class ExportRecord(familyId: String, itemId: String, size: String, executeDate: String)
     val exportBuffer = ObservableBuffer.empty[ExportRecord]
 
@@ -268,6 +285,7 @@ object MainApp extends JFXApp3:
         }
       )
 
+    
     // ── Manage Screens ──
     val formScreen = new VBox(15):
       padding = Insets(50)
@@ -278,6 +296,8 @@ object MainApp extends JFXApp3:
       alignment = Pos.Center
 
     def showForm(entityType: String, action: String): Unit =
+      // ai-assisted: #11
+      // why: Dynamically generating a GUI form based on entity types involves lengthy conditional validation and mapping.
       formScreen.children.clear()
       val title = new Label(s"$action $entityType") { style = "-fx-font-size: 16pt; -fx-font-weight: bold;" }
       

@@ -1,5 +1,9 @@
+// Ai-assisted : #1
+// Used AI to design idiomatic Scala 3 trait hierarchies and case classes with required domain fields.
+
 sealed trait PantryItem:
-  val itemId: String
+  protected val _itemId: String // Made protected for ID encapsulation
+  def itemId: String = _itemId // Public getter to allow read access
   val name: String
   val quantity: Int
   val expiryDate: String
@@ -8,7 +12,7 @@ sealed trait PantryItem:
     currentDate > expiryDate
 
 case class Perishable(
-  val itemId: String,
+  override protected val _itemId: String, // Made protected for ID encapsulation
   val name: String,
   val quantity: Int,
   val expiryDate: String,
@@ -20,7 +24,7 @@ case class Perishable(
     currentDate > expiryDate || isSpoiledPrematurely
 
 case class NonPerishable(
-  val itemId: String,
+  override protected val _itemId: String, // Made protected for ID encapsulation
   val name: String,
   val quantity: Int,
   val expiryDate: String
@@ -29,3 +33,7 @@ case class NonPerishable(
     false
 
   // Explicit override to guarantee the S1-8 mark
+
+object PantryItem:
+  def findItem(itemId: String, pantry: List[PantryItem]): Option[PantryItem] = 
+    pantry.find(_.itemId == itemId)

@@ -17,6 +17,8 @@ object SmartMatcher:
     * given to multiple beneficiaries until its quantity reaches 0.
     * Returns (allocated pairs, waiting list).
     */
+  // ai-assisted: #6
+  // why: Implemented pure FP list partitioning based on temporal constraints.
   def allocateFood[T <: PantryItem](
     inventory: List[T],
     requests: List[Beneficiary],
@@ -33,6 +35,8 @@ object SmartMatcher:
     val initialStock: Map[String, Int] =
       inventory.map(item => item.itemId -> item.quantity).toMap
 
+    // ai-assisted: #7
+    // why: Utilized foldLeft to maintain immutable state of stock and allocations across iterations
     // ── Pass 1: pair eligible beneficiaries whose requested item name matches ──
     val (nameMatched, stockAfterPass1, unmatchedRequests) =
       eligible.foldLeft((List.empty[(Beneficiary, T)], initialStock, List.empty[Beneficiary])):
@@ -70,6 +74,8 @@ object SmartMatcher:
    * EXPORT: Writes allocated pairs to ExportItem.csv.
    * Each row contains FamilyID, ItemID, Size, ExecuteDate.
    */
+  // ai-assisted: #8
+  // why: Scaffolded file I/O operations to safely read existing lines and append new CSV rows.
   def exportAllocations(
     allocations: List[(Beneficiary, PantryItem)],
     executeDate: String,
