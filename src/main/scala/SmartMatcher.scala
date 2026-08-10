@@ -16,6 +16,8 @@ object SmartMatcher:
     * Items are allocated based on their quantity – the same item can be
     * given to multiple beneficiaries until its quantity reaches 0.
     * Returns (allocated pairs, waiting list).
+    * Unmatched will be pass to 2 
+    * Matching with leftover items in order
     */
   // ai-assisted: #6
   // why: Implemented pure FP list partitioning based on temporal constraints.
@@ -43,8 +45,8 @@ object SmartMatcher:
         case ((paired, stock, unmatched), beneficiary) =>
           // find an item whose name matches AND has enough quantity for the family
           inventory.find(item =>
-            item.name.equalsIgnoreCase(beneficiary.requestedFood) &&
-            stock.getOrElse(item.itemId, 0) >= beneficiary.size
+            item.name.equalsIgnoreCase(beneficiary.requestedFood) && // find beneficiary requested food
+            stock.getOrElse(item.itemId, 0) >= beneficiary.size // check have enough stock for fulfill the beneficiary request
           ) match
             case Some(item) =>
               // pair them and decrement by family size

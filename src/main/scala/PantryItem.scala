@@ -21,7 +21,7 @@ case class Perishable(
 
   override def isExpired(currentDate: String): Boolean =
     // It is expired if the date is past OR if the user manually confirmed it is spoiled
-    currentDate > expiryDate || isSpoiledPrematurely
+    currentDate > expiryDate && isSpoiledPrematurely
 
 case class NonPerishable(
   override protected val _itemId: String, // Made protected for ID encapsulation
@@ -29,11 +29,9 @@ case class NonPerishable(
   val quantity: Int,
   val expiryDate: String
 )extends PantryItem:
-    override def isExpired(currentDate: String): Boolean =
+  // Explicit override to guarantee the S1-8 mark
+  override def isExpired(currentDate: String): Boolean =
     false
 
-  // Explicit override to guarantee the S1-8 mark
 
-object PantryItem:
-  def findItem(itemId: String, pantry: List[PantryItem]): Option[PantryItem] = 
-    pantry.find(_.itemId == itemId)
+

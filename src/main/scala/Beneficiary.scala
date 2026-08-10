@@ -1,3 +1,6 @@
+/**
+ * define the Beneficiary class
+ */
 class Beneficiary(
   val familyId: String, 
   val familyName: String,

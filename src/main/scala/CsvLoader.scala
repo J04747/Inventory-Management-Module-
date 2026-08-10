@@ -3,7 +3,7 @@ import scala.util.Try
 import java.io.File
 
 object CsvLoader:
-
+  // ai-assisted: #11  
   def loadInventory(path: String): Try[List[PantryItem]] =
     Try:
       val reader = CSVReader.open(new File(path))

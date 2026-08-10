@@ -7,7 +7,6 @@ import scalafx.geometry.{Insets, Pos}
 import scalafx.collections.ObservableBuffer
 import scalafx.beans.property.{StringProperty, ObjectProperty}
 
-
 object MainApp extends JFXApp3:
 
   override def start(): Unit =
@@ -18,6 +17,7 @@ object MainApp extends JFXApp3:
     
     val inventoryBuffer = ObservableBuffer.from(currentInventory)
     val beneficiaryBuffer = ObservableBuffer.from(currentBeneficiaries)
+
 
     // ── Inventory Screen ──
     val inventoryTable = new TableView[PantryItem](inventoryBuffer):
@@ -70,8 +70,8 @@ object MainApp extends JFXApp3:
           cellValueFactory = cell => StringProperty(cell.value.dateRequested)
         }
       )
-      // view
 
+      // view
     val beneficiaryScreen = new VBox(10):
       padding = Insets(20)
       alignment = Pos.TopCenter
@@ -94,7 +94,7 @@ object MainApp extends JFXApp3:
           cellValueFactory = cell => StringProperty(cell.value.item.name)
         },
         new TableColumn[MatchRecord, String]("Quantity") {
-          cellValueFactory = cell => StringProperty(cell.value.item.quantity.toString)
+          cellValueFactory = cell => StringProperty(cell.value.beneficiary.size.toString)
         },
         new TableColumn[MatchRecord, String]("Date Requested") {
           cellValueFactory = cell => StringProperty(cell.value.beneficiary.dateRequested)
@@ -105,6 +105,12 @@ object MainApp extends JFXApp3:
         new TableColumn[MatchRecord, String]("Munual Check") {
           // ai-assisted: #9
           // why: Boilerplate for custom TableCell creation in ScalaFX is complex and unintuitive.
+          /**
+           * if the item is perishable
+           * once user confirmed
+           * it call update function
+           *  copying the old data but explicitly setting its expired status (the false at the end) to false.
+           */
           cellValueFactory = _ => StringProperty("")
           cellFactory = (_: TableColumn[MatchRecord, String]) => new TableCell[MatchRecord, String] {
             item.onChange { (_, _, _) =>
@@ -140,28 +146,36 @@ object MainApp extends JFXApp3:
         }
       )
 
+    // SmartMatch button and text field button
+
     val dateInput = new TextField { promptText = "Enter Date (d/M/yyyy)"; prefWidth = 200 }
+
+    val executeErrorLabel = new Label("")
+    executeErrorLabel.style = "-fx-font-size: 14pt; -fx-text-fill: red;"
 
     val runMatchBtn = new Button("Run Smart Match"):
       style = "-fx-font-size: 16pt;"
       onAction = handle {
         val today = dateInput.text.value.trim
+        val isInvalidDate = (d: String) => scala.util.Try(java.time.LocalDate.parse(d, java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy"))).isFailure
         if (today.nonEmpty) {
-          try {
-            val (allocated, _) = SmartMatcher.allocateFood(currentInventory, currentBeneficiaries, today)
-            val records = allocated.map { case (b, i) => MatchRecord(b, i) }
-            matchBuffer.clear()
-            matchBuffer ++= records
-          } catch {
-            case _: Exception => // ignore invalid date format
+          if (isInvalidDate(today)) {
+            executeErrorLabel.text = "Error: Date must be d/M/yyyy format." // prevent error
+          } else {
+            try {
+              val (allocated, _) = SmartMatcher.allocateFood(currentInventory, currentBeneficiaries, today)
+              val records = allocated.map { case (b, i) => MatchRecord(b, i) }
+              matchBuffer.clear()
+              matchBuffer ++= records
+              executeErrorLabel.text = ""
+            } catch {
+              case _: Exception => // ignore invalid date format
+            }
           }
         }
       }
 
     val executeDateInput = new TextField { promptText = "Enter Execute Date (d/M/yyyy)"; prefWidth = 250 }
-
-    val executeErrorLabel = new Label("")
-    executeErrorLabel.style = "-fx-font-size: 14pt; -fx-text-fill: red;"
 
     val executeBtn = new Button("Execute"):
       // ai-assisted: #10
@@ -169,8 +183,11 @@ object MainApp extends JFXApp3:
       style = "-fx-font-size: 16pt;"
       onAction = handle {
         val execDate = executeDateInput.text.value.trim
+        val isInvalidDate = (d: String) => scala.util.Try(java.time.LocalDate.parse(d, java.time.format.DateTimeFormatter.ofPattern("d/M/yyyy"))).isFailure
         if (execDate.isEmpty) {
           executeErrorLabel.text = "Error: Please enter an execute date."
+        } else if (isInvalidDate(execDate)) {
+          executeErrorLabel.text = "Error: Date must be d/M/yyyy format."
         } else if (matchBuffer.isEmpty) {
           executeErrorLabel.text = "Error: No items to execute."
         } else {
