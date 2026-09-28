@@ -12,11 +12,11 @@ object MainApp extends JFXApp3:
   override def start(): Unit =
 
     // ── Load Data ──
-    var currentInventory = CsvLoader.loadInventory("src/main/resources/PantryItem.csv").getOrElse(List.empty)
-    var currentBeneficiaries = CsvLoader.loadBeneficiaries("src/main/resources/Beneficiary.csv").getOrElse(List.empty)
+    val currentInventory = ObjectProperty(CsvLoader.loadInventory("src/main/resources/PantryItem.csv").getOrElse(List.empty))
+    val currentBeneficiaries = ObjectProperty(CsvLoader.loadBeneficiaries("src/main/resources/Beneficiary.csv").getOrElse(List.empty))
     
-    val inventoryBuffer = ObservableBuffer.from(currentInventory)
-    val beneficiaryBuffer = ObservableBuffer.from(currentBeneficiaries)
+    val inventoryBuffer = ObservableBuffer.from(currentInventory.value)
+    val beneficiaryBuffer = ObservableBuffer.from(currentBeneficiaries.value)
 
 
     // ── Inventory Screen ──
@@ -125,10 +125,10 @@ object MainApp extends JFXApp3:
                     btn.disable = true
                     val p = record.item.asInstanceOf[Perishable]
                     val confirmedItem = Perishable(p.itemId, p.name, p.quantity, p.expiryDate, false)
-                    currentInventory = Manage.update(currentInventory, p.itemId, confirmedItem)
+                    currentInventory.value = Manage.update(currentInventory.value, p.itemId, confirmedItem)
                     inventoryBuffer.clear()
-                    inventoryBuffer ++= currentInventory
-                    Manage.savePantryItems(currentInventory, "src/main/resources/PantryItem.csv")
+                    inventoryBuffer ++= currentInventory.value
+                    Manage.savePantryItems(currentInventory.value, "src/main/resources/PantryItem.csv")
                   }
                   if (record.confirmed.value) {
                     btn.text = "Confirmed"
@@ -163,7 +163,7 @@ object MainApp extends JFXApp3:
             executeErrorLabel.text = "Error: Date must be d/M/yyyy format." // prevent error
           } else {
             try {
-              val (allocated, _) = SmartMatcher.allocateFood(currentInventory, currentBeneficiaries, today)
+              val (allocated, _) = SmartMatcher.allocateFood(currentInventory.value, currentBeneficiaries.value, today)
               val records = allocated.map { case (b, i) => MatchRecord(b, i) }
               matchBuffer.clear()
               matchBuffer ++= records
@@ -203,22 +203,22 @@ object MainApp extends JFXApp3:
             SmartMatcher.exportAllocations(pairs, execDate, "src/main/resources/ExportItem.csv")
             // delete matched beneficiaries from list
             matchBuffer.foreach { r =>
-              currentBeneficiaries = Manage.delete(currentBeneficiaries, r.beneficiary.familyId)
+              currentBeneficiaries.value = Manage.delete(currentBeneficiaries.value, r.beneficiary.familyId)
             }
             beneficiaryBuffer.clear()
-            beneficiaryBuffer ++= currentBeneficiaries
-            Manage.saveBeneficiaries(currentBeneficiaries, "src/main/resources/Beneficiary.csv")
+            beneficiaryBuffer ++= currentBeneficiaries.value
+            Manage.saveBeneficiaries(currentBeneficiaries.value, "src/main/resources/Beneficiary.csv")
             // deduct quantity from inventory
             matchBuffer.foreach { r =>
               val newQty = r.item.quantity - r.beneficiary.size
               val updatedItem: PantryItem = r.item match
                 case p: Perishable => Perishable(p.itemId, p.name, newQty, p.expiryDate, p.isSpoiledPrematurely)
                 case np: NonPerishable => NonPerishable(np.itemId, np.name, newQty, np.expiryDate)
-              currentInventory = Manage.update(currentInventory, r.item.itemId, updatedItem)
+              currentInventory.value = Manage.update(currentInventory.value, r.item.itemId, updatedItem)
             }
             inventoryBuffer.clear()
-            inventoryBuffer ++= currentInventory
-            Manage.savePantryItems(currentInventory, "src/main/resources/PantryItem.csv")
+            inventoryBuffer ++= currentInventory.value
+            Manage.savePantryItems(currentInventory.value, "src/main/resources/PantryItem.csv")
             // clear table
             matchBuffer.clear()
             executeErrorLabel.style = "-fx-font-size: 14pt; -fx-text-fill: green;"
@@ -321,22 +321,20 @@ object MainApp extends JFXApp3:
       val inputContainer = new VBox(10)
       inputContainer.alignment = Pos.Center
       
-      var textFields = Map.empty[String, TextField]
-      
       val fields = action match
         case "Create" | "Update" =>
           if entityType == "Pantry Item" then Seq("ID", "Name", "Qty", "Expiry", "Type (Perishable/NonPerishable)")
           else Seq("FamilyID", "Name", "Size", "RequestedFood", "Date")
         case "Read" | "Delete" =>
           Seq("ID")
-          
-      fields.foreach { f =>
+
+      val textFields: Map[String, TextField] = fields.map { f =>
         val tf = new TextField { promptText = f; prefWidth = 400 }
-        textFields += (f -> tf)
         inputContainer.children.add(tf)
-      }
+        f -> tf
+      }.toMap
       
-      val confirmBtn = new Button("Confirm")
+      val confirmBtn = new Button("Confirm") { defaultButton = true }
       val resultLabel = new Label("")
       resultLabel.style = "-fx-font-size: 16pt; -fx-font-weight: bold;"
       
@@ -362,27 +360,27 @@ object MainApp extends JFXApp3:
                 case "Create" =>
                   val isPerishable = textFields("Type (Perishable/NonPerishable)").text.value.trim == "Perishable"
                   val item = if isPerishable then Perishable(textFields("ID").text.value.trim, textFields("Name").text.value.trim, textFields("Qty").text.value.trim.toInt, textFields("Expiry").text.value.trim, false) else NonPerishable(textFields("ID").text.value.trim, textFields("Name").text.value.trim, textFields("Qty").text.value.trim.toInt, textFields("Expiry").text.value.trim)
-                  currentInventory = Manage.create(currentInventory, item)
+                  currentInventory.value = Manage.create(currentInventory.value, item)
                   inventoryBuffer.clear()
-                  inventoryBuffer ++= currentInventory
-                  Manage.savePantryItems(currentInventory, "src/main/resources/PantryItem.csv")
+                  inventoryBuffer ++= currentInventory.value
+                  Manage.savePantryItems(currentInventory.value, "src/main/resources/PantryItem.csv")
                   resultLabel.text = "Item Created!"
                 case "Read" =>
-                  val item = Manage.read(currentInventory, textFields("ID").text.value.trim)
+                  val item = Manage.read(currentInventory.value, textFields("ID").text.value.trim)
                   resultLabel.text = item.map(i => s"${i.itemId} - ${i.name} - ${i.quantity} - ${i.expiryDate}").getOrElse("Not Found")
                 case "Update" =>
                   val isPerishable = textFields("Type (Perishable/NonPerishable)").text.value.trim == "Perishable"
                   val item = if isPerishable then Perishable(textFields("ID").text.value.trim, textFields("Name").text.value.trim, textFields("Qty").text.value.trim.toInt, textFields("Expiry").text.value.trim, false) else NonPerishable(textFields("ID").text.value.trim, textFields("Name").text.value.trim, textFields("Qty").text.value.trim.toInt, textFields("Expiry").text.value.trim)
-                  currentInventory = Manage.update(currentInventory, textFields("ID").text.value.trim, item)
+                  currentInventory.value = Manage.update(currentInventory.value, textFields("ID").text.value.trim, item)
                   inventoryBuffer.clear()
-                  inventoryBuffer ++= currentInventory
-                  Manage.savePantryItems(currentInventory, "src/main/resources/PantryItem.csv")
+                  inventoryBuffer ++= currentInventory.value
+                  Manage.savePantryItems(currentInventory.value, "src/main/resources/PantryItem.csv")
                   resultLabel.text = "Item Updated!"
                 case "Delete" =>
-                  currentInventory = Manage.delete(currentInventory, textFields("ID").text.value.trim)
+                  currentInventory.value = Manage.delete(currentInventory.value, textFields("ID").text.value.trim)
                   inventoryBuffer.clear()
-                  inventoryBuffer ++= currentInventory
-                  Manage.savePantryItems(currentInventory, "src/main/resources/PantryItem.csv")
+                  inventoryBuffer ++= currentInventory.value
+                  Manage.savePantryItems(currentInventory.value, "src/main/resources/PantryItem.csv")
                   resultLabel.text = "Item Deleted!"
             else
               val sizeField = textFields.get("Size").map(_.text.value.trim)
@@ -397,26 +395,26 @@ object MainApp extends JFXApp3:
                 action match
                 case "Create" =>
                   val item = Beneficiary(textFields("FamilyID").text.value.trim, textFields("Name").text.value.trim, textFields("Size").text.value.trim.toInt, textFields("RequestedFood").text.value.trim, textFields("Date").text.value.trim)
-                  currentBeneficiaries = Manage.create(currentBeneficiaries, item)
+                  currentBeneficiaries.value = Manage.create(currentBeneficiaries.value, item)
                   beneficiaryBuffer.clear()
-                  beneficiaryBuffer ++= currentBeneficiaries
-                  Manage.saveBeneficiaries(currentBeneficiaries, "src/main/resources/Beneficiary.csv")
+                  beneficiaryBuffer ++= currentBeneficiaries.value
+                  Manage.saveBeneficiaries(currentBeneficiaries.value, "src/main/resources/Beneficiary.csv")
                   resultLabel.text = "Beneficiary Created!"
                 case "Read" =>
-                  val item = Manage.read(currentBeneficiaries, textFields("ID").text.value.trim)
+                  val item = Manage.read(currentBeneficiaries.value, textFields("ID").text.value.trim)
                   resultLabel.text = item.map(i => s"${i.familyId} - ${i.familyName} - ${i.requestedFood} - ${i.dateRequested}").getOrElse("Not Found")
                 case "Update" =>
                   val item = Beneficiary(textFields("FamilyID").text.value.trim, textFields("Name").text.value.trim, textFields("Size").text.value.trim.toInt, textFields("RequestedFood").text.value.trim, textFields("Date").text.value.trim)
-                  currentBeneficiaries = Manage.update(currentBeneficiaries, textFields("FamilyID").text.value.trim, item)
+                  currentBeneficiaries.value = Manage.update(currentBeneficiaries.value, textFields("FamilyID").text.value.trim, item)
                   beneficiaryBuffer.clear()
-                  beneficiaryBuffer ++= currentBeneficiaries
-                  Manage.saveBeneficiaries(currentBeneficiaries, "src/main/resources/Beneficiary.csv")
+                  beneficiaryBuffer ++= currentBeneficiaries.value
+                  Manage.saveBeneficiaries(currentBeneficiaries.value, "src/main/resources/Beneficiary.csv")
                   resultLabel.text = "Beneficiary Updated!"
                 case "Delete" =>
-                  currentBeneficiaries = Manage.delete(currentBeneficiaries, textFields("ID").text.value.trim)
+                  currentBeneficiaries.value = Manage.delete(currentBeneficiaries.value, textFields("ID").text.value.trim)
                   beneficiaryBuffer.clear()
-                  beneficiaryBuffer ++= currentBeneficiaries
-                  Manage.saveBeneficiaries(currentBeneficiaries, "src/main/resources/Beneficiary.csv")
+                  beneficiaryBuffer ++= currentBeneficiaries.value
+                  Manage.saveBeneficiaries(currentBeneficiaries.value, "src/main/resources/Beneficiary.csv")
                   resultLabel.text = "Beneficiary Deleted!"
         catch
           case _: Exception => resultLabel.text = s"Error: Invalid input format."

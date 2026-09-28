@@ -1,3 +1,5 @@
+import scala.util.Try
+
 // ai-assisted: #2
 // why: Implemented Type Class pattern instances for generic ID extraction.
 trait Identifiable[T]:
@@ -48,21 +50,23 @@ object Manage:
    */
   // ai-assisted: #5
   // why: Provided CSV serialization logic with string interpolation and pattern matching.
-  def savePantryItems(items: List[PantryItem], filePath: String): Unit =
-    val header = "Type,Item_ID,Item_Name,Stock_Quantity,Expiration_Date"
-    val rows = items.map:
-      case p: Perishable    => s"Perishable,${p.itemId},${p.name},${p.quantity},${p.expiryDate}"
-      case np: NonPerishable => s"NonPerishable,${np.itemId},${np.name},${np.quantity},${np.expiryDate}"
-    val content = (header +: rows).mkString("\n")
-    java.nio.file.Files.writeString(java.nio.file.Paths.get(filePath), content)
+  def savePantryItems(items: List[PantryItem], filePath: String): Try[Unit] =
+    Try:
+      val header = "Type,Item_ID,Item_Name,Stock_Quantity,Expiration_Date"
+      val rows = items.map:
+        case p: Perishable    => s"Perishable,${p.itemId},${p.name},${p.quantity},${p.expiryDate}"
+        case np: NonPerishable => s"NonPerishable,${np.itemId},${np.name},${np.quantity},${np.expiryDate}"
+      val content = (header +: rows).mkString("\n")
+      java.nio.file.Files.writeString(java.nio.file.Paths.get(filePath), content)
 
   /**
    * SAVE: Writes the current Beneficiary list back to the CSV file.
    * Preserves the CSV header row format.
    */
-  def saveBeneficiaries(items: List[Beneficiary], filePath: String): Unit =
-    val header = "Family_ID,Family_Name,Size,Requested_Food,Date_Requested"
-    val rows = items.map(b => s"${b.familyId},${b.familyName},${b.size},${b.requestedFood},${b.dateRequested}")
-    val content = (header +: rows).mkString("\n")
-    java.nio.file.Files.writeString(java.nio.file.Paths.get(filePath), content)
+  def saveBeneficiaries(items: List[Beneficiary], filePath: String): Try[Unit] =
+    Try:
+      val header = "Family_ID,Family_Name,Size,Requested_Food,Date_Requested"
+      val rows = items.map(b => s"${b.familyId},${b.familyName},${b.size},${b.requestedFood},${b.dateRequested}")
+      val content = (header +: rows).mkString("\n")
+      java.nio.file.Files.writeString(java.nio.file.Paths.get(filePath), content)
 

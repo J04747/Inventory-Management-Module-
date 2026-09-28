@@ -1,8 +1,26 @@
 Type,Item_ID,Item_Name,Stock_Quantity,Expiration_Date
-Perishable,INV-101,Fresh Apples,50,5/8/2026
-Perishable,INV-102,Whole Milk,0,10/8/2026
-NonPerishable,INV-103,Canned Black Beans,95,1/12/2028
-NonPerishable,INV-104,White Rice (5kg),40,20/5/2027
-Perishable,INV-105,Whole Wheat Bread,30,7/8/2026
+Perishable,INV-101,Fresh Apples,46,5/8/2026
+Perishable,INV-102,Whole Milk,27,10/8/2026
+NonPerishable,INV-103,Canned Black Beans,93,1/12/2028
+NonPerishable,INV-104,White Rice (5kg),35,20/5/2027
+Perishable,INV-105,Whole Wheat Bread,27,7/8/2026
 NonPerishable,INV-106,Peanut Butter,54,15/10/2027
-NonPerishable,1,1,1,7/2/2028
+Perishable,INV-107,Fresh Eggs (dozen),39,12/8/2026
+Perishable,INV-108,Chicken Breast,21,8/8/2026
+NonPerishable,INV-109,Canned Tuna,75,30/6/2028
+NonPerishable,INV-110,Dried Pasta,60,15/3/2028
+Perishable,INV-111,Fresh Oranges,35,9/8/2026
+NonPerishable,INV-112,Cooking Oil (1L),20,1/9/2027
+Perishable,INV-113,Greek Yogurt,40,6/8/2026
+NonPerishable,INV-114,Canned Corn,70,20/11/2028
+Perishable,INV-115,Beef Mince,18,10/8/2026
+Perishable,INV-116,Cheddar Cheese,25,15/8/2026
+NonPerishable,INV-117,Instant Oatmeal,45,20/4/2028
+Perishable,INV-118,Fresh Spinach,30,6/8/2026
+NonPerishable,INV-119,Canned Tomatoes,65,15/7/2028
+Perishable,INV-120,Fresh Salmon,12,9/8/2026
+NonPerishable,INV-121,Soy Sauce (500ml),40,1/6/2028
+Perishable,INV-122,Strawberries,22,7/8/2026
+NonPerishable,INV-123,Honey (500g),50,30/12/2028
+NonPerishable,INV-124,Canned Chickpeas,55,10/9/2028
+Perishable,INV-125,Fresh Carrots,38,11/8/2026
